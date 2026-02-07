@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>💕</title>
+
+  <style>
+    body{
+      margin:0;
+      min-height:100vh;
+      display:grid;
+      place-items:center;
+      background:#d81b54; /* TODO: change background colour */
+      font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
+      padding:16px;
+    }
+
+    .card{
+      width:min(720px,95vw);
+      min-height:420px;
+      background:#fff6f8;
+      border-radius:18px;
+      padding:28px 22px;
+      box-shadow:0 14px 40px rgba(0,0,0,0.12);
+      position:relative;
+      overflow:hidden;
+      text-align:center;
+    }
+
+    h1{
+      margin:0 0 22px;
+      font-size:32px;
+      line-height:1.15;
+      color:#000;
+      font-weight:800;
+    }
+
+    .buttonsRow{
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      gap:18px;
+      margin:10px 0 18px;
+      position:relative;
+      z-index:2;
+    }
+
+    button{
+      font-size:18px;
+      padding:14px 22px;
+      border-radius:12px;
+      border:none;
+      font-weight:800;
+      cursor:pointer;
+      user-select:none;
+      -webkit-tap-highlight-color:transparent;
+      white-space:nowrap;
+    }
+
+    #yes{
+      background:#d81b60; /* TODO: change YES button's colour */
+      color:#fff;
+      transition:transform 140ms ease;
+      position:relative;
+      z-index:2;
+    }
+
+    #yes:hover{
+      transform:scale(1.07);
+    }
+
+    #no{
+      background:#fff;
+      color:#000;
+      border:2px solid #000;
+    }
+
+    #noHolder{
+      width:0;
+      height:0;
+    }
+
+    .msgBox{
+      position:absolute;
+      left:22px;
+      right:22px;
+      bottom:18px;
+      padding:12px 14px;
+      border-radius:12px;
+      border:1px solid rgba(0,0,0,0.15);
+      min-height:44px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight:700;
+      color:#000;
+    }
+
+    .overlay{
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,0.55);
+      display:none;
+      place-items:center;
+      padding:16px;
+      z-index:50;
+    }
+
+    .overlay.show{
+      display:grid;
+    }
+
+    .modal{
+      width:min(640px,95vw);
+      background:#fff;
+      border-radius:18px;
+      padding:22px 18px;
+      text-align:center;
+      box-shadow:0 18px 70px rgba(0,0,0,0.25);
+    }
+
+    .modal h2{
+      margin:0 0 10px;
+      font-size:34px;
+      font-weight:900;
+      color:#000;
+    }
+
+    .modal p{
+      margin:0 0 14px;
+      font-size:18px;
+      font-weight:800;
+      color:#000;
+      line-height:1.25;
+    }
+
+    .gifWrap{
+      width:100%;
+      max-width:560px;
+      margin:0 auto;
+      border-radius:14px;
+      overflow:hidden;
+      border:1px solid rgba(0,0,0,0.15);
+      aspect-ratio:16/9;
+      background:#fff;
+    }
+
+    .gifWrap img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      display:block;
+    }
+
+    canvas{
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      z-index:60;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="card" id="card">
+    <h1>Robin,<br>Will You Be My Valentine? 💕</h1>
+
+    <div class="buttonsRow" id="buttonsRow">
+      <button id="yes" type="button">YES</button>
+      <div id="noHolder"></div>
+      <button id="no" type="button">NO</button>
+    </div>
+
+    <div class="msgBox" id="msgBox"></div>
+  </div>
+
+  <div class="overlay" id="overlay">
+    <div class="modal">
+      <h2>HOORAY!!!🥳🎉</h2>
+      <p>Happy Valentines Boo!<br>I Love You!💕✨</p>
+      <div class="gifWrap">
+        <img src="celebration.gif" alt="">
+      </div>
+    </div>
+  </div>
+
+  <canvas id="confetti"></canvas>
+
+  <script>
+    const card = document.getElementById("card");
+    const noBtn = document.getElementById("no");
+    const noHolder = document.getElementById("noHolder");
+    const msgBox = document.getElementById("msgBox");
+    const yesBtn = document.getElementById("yes");
+    const overlay = document.getElementById("overlay");
+
+    const msgs = [
+      "Wow, Really?",
+      "Absolutely Not 🙄",
+      "🚫 ERROR 404 🚫 NO Not Found",
+      "\"No\" is kinda shy, don't touch it 😈",
+      "Try again 💔",
+      "WOW, BOLD move 😌",
+      "We both know that's not happening 😌",
+      "I admire the confidence 💅",
+      "That was cute. Anyways... 🙄",
+      "You're persistent, I respect it 🏆",
+      "Interesting strategy 🤔",
+      "This is getting kinda awkward... 🐢",
+      "Just hit the damn \"YES\" button already! ✅"
+    ];
+    let msgIndex = 0;
+    let armed = false;
+
+    function armNo(){
+      if(armed) return;
+      armed = true;
+
+      noHolder.style.width = noBtn.offsetWidth + "px";
+      noHolder.style.height = noBtn.offsetHeight + "px";
+
+      const cardRect = card.getBoundingClientRect();
+      const noRect = noBtn.getBoundingClientRect();
+
+      const left = noRect.left - cardRect.left;
+      const top  = noRect.top  - cardRect.top;
+
+      card.appendChild(noBtn);
+      noBtn.style.position = "absolute";
+      noBtn.style.left = left + "px";
+      noBtn.style.top = top + "px";
+      noBtn.style.zIndex = 10;
+    }
+
+    function moveNo(){
+      armNo();
+
+      const pad = 10;
+      const maxX = card.clientWidth - noBtn.offsetWidth - pad;
+      const maxY = card.clientHeight - noBtn.offsetHeight - pad;
+
+      const x = pad + Math.random() * Math.max(0, maxX);
+      const y = pad + Math.random() * Math.max(0, maxY);
+
+      noBtn.style.left = x + "px";
+      noBtn.style.top = y + "px";
+
+      msgBox.textContent = msgs[msgIndex % msgs.length];
+      msgIndex++;
+    }
+
+    noBtn.addEventListener("touchstart", e => {
+      e.preventDefault();
+      moveNo();
+    }, { passive:false });
+
+    noBtn.addEventListener("mouseenter", moveNo);
+    noBtn.addEventListener("click", e => {
+      e.preventDefault();
+      moveNo();
+    });
+
+    yesBtn.addEventListener("click", () => {
+      overlay.classList.add("show");
+      startConfetti();
+    });
+
+    overlay.addEventListener("click", () => {
+      overlay.classList.remove("show");
+    });
+
+    const canvas = document.getElementById("confetti");
+    const ctx = canvas.getContext("2d");
+    let pieces = [];
+    let animId = null;
+
+    function resize(){
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener("resize", resize);
+
+    function startConfetti(){
+      if(animId) cancelAnimationFrame(animId);
+      pieces = [];
+      const count = 140;
+
+      for(let i=0;i<count;i++){
+        pieces.push({
+          x: canvas.width / 2,
+          y: canvas.height / 2,
+          w: 6 + Math.random() * 6,
+          h: 10 + Math.random() * 10,
+          vx: (Math.random() - 0.5) * 12,
+          vy: -Math.random() * 14 - 6,
+          g: 0.55,
+          r: Math.random() * Math.PI,
+          vr: (Math.random() - 0.5) * 0.25,
+          a: 1,
+          c: `hsl(${Math.random()*360},90%,60%)`
+        });
+      }
+
+      const start = performance.now();
+      animId = requestAnimationFrame(function update(t){
+        const elapsed = t - start;
+
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        pieces.forEach(p=>{
+          p.vy += p.g;
+          p.x += p.vx;
+          p.y += p.vy;
+          p.r += p.vr;
+
+          if(elapsed > 1200) p.a = Math.max(0, 1 - (elapsed - 1200) / 900);
+
+          ctx.save();
+          ctx.globalAlpha = p.a;
+          ctx.translate(p.x,p.y);
+          ctx.rotate(p.r);
+          ctx.fillStyle = p.c;
+          ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);
+          ctx.restore();
+        });
+
+        pieces = pieces.filter(p => p.y < canvas.height + 60 && p.a > 0.02);
+        if(pieces.length){
+          animId = requestAnimationFrame(update);
+        }else{
+          ctx.clearRect(0,0,canvas.width,canvas.height);
+          animId = null;
+        }
+      });
+    }
+  </script>
+</body>
+</html>
